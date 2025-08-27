@@ -1,0 +1,106 @@
+plugins {
+    id 'fabric-loom' version '1.10.5'
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+String default_minecraft_version = "1.20.1"
+String minecraft_version = rootProject.properties.containsKey("minecraftVersion") ? rootProject.properties.get("minecraftVersion") : default_minecraft_version
+boolean isJava17 = minecraft_version == "1.20" || minecraft_version == "1.20.1" || minecraft_version == "1.20.2" || minecraft_version == "1.20.3" || minecraft_version == "1.20.4"
+String yarn_version = [
+        "1.20": "1", "1.20.1": "10", "1.20.2": "4", "1.20.3": "1", "1.20.4": "3", "1.20.5": "1", "1.20.6": "3",
+        "1.21": "9", "1.21.1": "3", "1.21.2": "1", "1.21.3": "2", "1.21.4": "8", "1.21.5": "1", "1.21.6": "1", "1.21.7": "8", "1.21.8": "1"
+][minecraft_version]
+String fabric_api_version = [
+        "1.20": "0.83.0", "1.20.1": "0.92.6", "1.20.2": "0.91.6", "1.20.3": "0.91.1", "1.20.4": "0.97.3", "1.20.5": "0.97.8", "1.20.6": "0.100.8",
+        "1.21": "0.102.0", "1.21.1": "0.116.5", "1.21.2": "0.106.1", "1.21.3": "0.114.1", "1.21.4": "0.119.4", "1.21.5": "0.128.2", "1.21.6": "0.128.2", "1.21.7": "0.129.0", "1.21.8": "0.132.0"
+][minecraft_version]
+String axiom_version = [
+        "1.20": "5.0.1", "1.20.1": "5.0.1", "1.20.2": "KmC5yP3s", "1.20.3": "EZW81noG", "1.20.4": "EZW81noG", "1.20.5": "tEdHj0i1", "1.20.6": "tEdHj0i1",
+        "1.21": "6BFd0w5s", "1.21.1": "6BFd0w5s", "1.21.2": "hus0K8c6", "1.21.3": "hus0K8c6", "1.21.4": "ssZBfxpk", "1.21.5": "IYaO2xSS", "1.21.6": "qsljLO3K", "1.21.7": "qsljLO3K", "1.21.8": "qsljLO3K"
+][minecraft_version]
+
+
+repositories {
+    // Add repositories to retrieve artifacts from in here.
+    // You should only use this when depending on other mods because
+    // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
+    // See https://docs.gradle.org/current/userguide/declaring_repositories.html
+    // for more information about repositories.
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+    }
+}
+
+dependencies {
+    // To change the versions see the gradle.properties file
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings "net.fabricmc:yarn:${minecraft_version}+build.${yarn_version}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}+${minecraft_version}"
+    modImplementation "maven.modrinth:axiom:${axiom_version}"
+}
+
+processResources {
+    inputs.property "version", project.version
+    filteringCharset "UTF-8"
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+def targetJavaVersion = isJava17 ? 17 : 21
+tasks.withType(JavaCompile).configureEach {
+    // ensure that the encoding is set to UTF-8, no matter what the system default is
+    // this fixes some edge cases with special characters not displaying correctly
+    // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
+    // If Javadoc is generated, this must be specified in that task too.
+    it.options.encoding = "UTF-8"
+    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+        it.options.release.set(targetJavaVersion)
+    }
+}
+
+java {
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    if (JavaVersion.current() < javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+    // if it is present.
+    // If you remove this line, sources will not be generated.
+    withSourcesJar()
+}
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.archivesBaseName}" }
+    }
+}
+
+// configure the maven publication
+publishing {
+    publications {
+        create("mavenJava", MavenPublication) {
+            artifactId = project.archives_base_name
+            from components.java
+        }
+    }
+
+    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+    repositories {
+        // Add repositories to publish to here.
+        // Notice: This block does NOT have the same function as the block in the top level.
+        // The repositories here will be used for publishing your artifact, not for
+        // retrieving dependencies.
+    }
+}

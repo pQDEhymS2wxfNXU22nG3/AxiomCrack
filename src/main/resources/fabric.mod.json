@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "axiomcrack",
+  "version": "${version}",
+  "name": "Axiom Crack",
+  "description": "Crack Axiom",
+  "authors": ["pQDEhymS2wxfNXU22nG3"],
+  "contact": {
+    "source": "https://github.com/pQDEhymS2wxfNXU22nG3/AxiomCrack",
+    "issues": "https://github.com/pQDEhymS2wxfNXU22nG3/AxiomCrack/issues"
+  },
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "io.github.pQDEhymS2wxfNXU22nG3.axiomcrack.client.AxiomCrackClient"
+    ],
+    "main": [
+      "io.github.pQDEhymS2wxfNXU22nG3.axiomcrack.AxiomCrack"
+    ]
+  },
+  "mixins": [
+    "axiomcrack.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": "*",
+    "fabric": "*",
+    "minecraft": "*",
+    "axiom": "*"
+  },
+  "custom": {
+    "modmenu": {
+      "parent": "axiom",
+      "update_checker": false
+    }
+  }
+}
